@@ -1,0 +1,159 @@
+ body {
+        background-color: #2E3349;
+        margin: 0;
+    }
+
+
+
+.navbar {
+  display: flex;
+  justify-content: flex-end;
+  padding: 10px;
+}
+
+a:link,
+a:visited {
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 0.8em;
+  font-family: cursive;
+  padding: 10px;
+}
+
+.navbar-nav {
+  list-style-type: none;
+  display: flex;
+  align-items: center;
+}
+
+.nav-link {
+  background-color: #c82e2c;
+  border-radius: 50px;
+  color: #ffffff;
+  padding: 2px 6px;
+  font-size: 0.8em;
+  font-family: cursive;
+  margin-left: 10px;
+}
+
+.navbar-brand {
+        margin-right: auto;
+    }
+
+
+main {
+  font-family: cursive;
+  color: #ffffff;
+  padding: 20px;
+  font-size: 1.4em;
+}
+
+.buttons {
+  text-align: left;
+  margin-top: 25px;
+}
+
+.nav {
+  background-color: #c82e2c;
+  border-radius: 50px;
+  color: #ffffff;
+  padding: 6px;
+  font-size: 1.5em;
+  font-family: cursive;
+  margin-left: 12px;
+}
+
+
+.movie-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-gap: 15px;
+  margin-top: 30px;
+}
+
+.movie-entry {
+  text-align: center;
+  flex: 0 0 25%;
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.movie-poster {
+  width: 80%;
+  height: auto;
+  max-height: 500px;
+  object-fit: center;
+  margin-bottom: 10px;
+  max-width: 200px;
+}
+.movie-name {
+  margin-top: 10px;
+  margin-bottom: 5px;
+}
+
+.view-movie {
+  display: inline-block;
+  margin-top: 5px;
+}
+
+.favorite-button {
+  background-color: transparent;
+  border: none;
+  color: #c82e2c;
+  font-size: 0.8em;
+  font-family: cursive;
+  margin-left: 12px;
+  transition: color 0.3s;
+}
+
+.favorite-button:hover {
+  color: red;
+}
+
+.favorite-button:focus {
+  outline: none;
+}
+
+.favorite-button:checked {
+  color: red;
+}
+
+.nav.active {
+  background-color: #8c1f1c;
+  color: #ffffff;
+}
+
+.movie-details {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.movie-info {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+
+.movie-rating-review {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.nav-link {
+  margin-top: 10px;
+}
+
+.poster-image{
+  width: 80%;
+  height: auto;
+  max-height: 500px;
+  object-fit: center;
+  margin-bottom: 10px;
+  max-width: 200px;
+}

@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div id="favorites">
+    <hr>
+    <div id="interface">
+        <h2>Your Favorite Movies</h2>
+        <div class="movie-grid">
+            {% for favorite_movie in favorite_movies %}
+            <div class="movie-entry">
+                <img class="movie-poster" src="{{ favorite_movie.movie.poster }}" alt="Movie Poster">
+                <h3 class="movie-name">{{ favorite_movie.movie.movie_name }}</h3>
+                <a class="nav-link" href="{% url 'movie_details' favorite_movie.movie.id %}">View Movie</a>
+            </div>
+            {% empty %}
+            <p>No favorite movies yet.</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

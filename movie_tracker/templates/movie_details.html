@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- movie_details.html -->
+
+<div class="movie-details">
+  <h1>{{ movie.movie_name }}</h1>
+  <div class="movie-info">
+    <img class="movie-poster" src="{{ movie.poster }}" alt="Movie Poster">
+    <div class="movie-rating-review">
+      <p><strong>Watch Date:</strong> {{ movie.date }}</p>
+      <p><strong>Rating:</strong> {{ movie.rating }}</p>
+      <p><strong>Review:</strong> {{ movie.review }}</p>
+    </div>
+  </div>
+  <a class="nav-link" href="{{ movie.details }}">View Details</a>
+</div>
+
+{% endblock %}
