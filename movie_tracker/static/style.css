@@ -157,3 +157,75 @@ main {
   margin-bottom: 10px;
   max-width: 200px;
 }
+
+<!-- Updated CSS -->
+<style>
+  #comment_form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  #comment_text {
+    width: 80%; /* Adjust the width as needed */
+    height: 80px !important; /* Adjust the height as needed */
+    resize: none;
+    margin-bottom: 10px;
+  }
+
+  /* Styling for the post comment button */
+  button.post-comment-button {
+    background-color: #c82e2c;
+    border: none;
+    color: #ffffff;
+    font-size: 0.8em;
+    font-family: cursive;
+    transition: background 0.3s, color 0.3s;
+    margin-top: 10px;
+    cursor: pointer;
+    border-radius: 20px; /* Adjust the border-radius as needed */
+  }
+
+  button.post-comment-button:hover {
+    color: red;
+  }
+
+  button.post-comment-button:focus {
+    outline: none;
+  }
+
+  button.post-comment-button.clicked {
+    color: red;
+  }
+
+  button.like-button {
+    background-color: #c82e2c;
+    border: none;
+    color: #ffffff;
+    font-size: 0.8em;
+    font-family: cursive;
+    transition: background 0.3s, color 0.3s;
+    margin-top: 10px;
+    cursor: pointer;
+    border-radius: 20px; /* Adjust the border-radius as needed */
+  }
+
+  button.like-button:hover {
+    color: red;
+  }
+
+  button.like-button:focus {
+    outline: none;
+  }
+
+  button.like-button.clicked {
+    color: red;
+  }
+
+
+</style>
+
+
+
+
