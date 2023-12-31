@@ -1,6 +1,25 @@
 from django.db import models
 from django.contrib.auth.models import User
 
+class Profile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    profile_picture = models.ImageField(upload_to='profile_pics', blank=True)
+    bio = models.TextField(blank=True)
+    social_media = models.JSONField(blank=True, null=True)
+    all_time_favorites = models.ManyToManyField('Movie', related_name='all_time_favorites', blank=True)
+    recently_viewed_movies = models.ManyToManyField('Movie', related_name='viewed_by_profiles', blank=True)
+    top3_movies = models.ManyToManyField('Movie', related_name='top3_movies', blank=True)
+    follows = models.ManyToManyField(
+        "self",
+        related_name="followed_by",
+        symmetrical=False,
+        blank=True
+    )
+
+    def __str__(self):
+        return f"Profile for {self.user.username}"
+
+
 
 class FavoriteMovieManager(models.Manager):
     pass
@@ -26,6 +45,7 @@ class Movie(models.Model):
     review = models.TextField(blank=True)
     is_watchlist = models.BooleanField(default=False)
     is_favorite = models.BooleanField(default=False)
+    is_top3 = models.BooleanField(default=False)
 
     objects = models.Manager()
 
