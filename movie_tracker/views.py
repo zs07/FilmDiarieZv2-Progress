@@ -1,83 +1,67 @@
+import re
 from django.contrib.auth.models import User
-from django.contrib.auth import login, authenticate,logout
+from django.contrib.auth import login, authenticate, logout
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from .forms import MovieForm, CommentForm
-from django.db import IntegrityError
-from .models import Movie, FavoriteMovie, Comment
-from django.http import JsonResponse
-
-@login_required
-def like_review(request, movie_id):
-    movie = get_object_or_404(Movie, id=movie_id)
-
-    # Assuming you have a user (ensure the user is logged in before reaching this view)
-    user = request.user
-
-    # Check if the user has already liked the movie review
-    favorite_movie = FavoriteMovie.objects.filter(user=user, movie=movie).first()
-
-    if favorite_movie:
-        # User has already liked, so remove their like
-        favorite_movie.delete()
-        movie.review_likes -= 1
-        liked = False
-    else:
-        # User has not liked, so add their like
-        FavoriteMovie.objects.create(user=user, movie=movie)
-        movie.review_likes += 1
-        liked = True
-
-    movie.save()
-
-    return JsonResponse({'review_likes': movie.review_likes, 'liked': liked})
-
+from django.db import IntegrityError, transaction
+from django.http import HttpResponseBadRequest, JsonResponse
+from django.db.models import Q
+from .forms import MovieForm, ProfilePictureForm, CommentForm
+from .models import Movie, FavoriteMovie, Profile, Comment
+from django.core.exceptions import ValidationError
+from django.db import transaction
 
 def signup_view(request):
     if request.method == "POST":
         username = request.POST["username"]
         email = request.POST["email"]
         password = request.POST["password"]
+        bio = request.POST.get('bio')
+        social_media_links = request.POST.get('social_media')
+
+        if not re.match("^[a-zA-Z0-9_]+$", username):
+            return render(request, "signup.html", {"message": "Invalid username format. Use only letters, numbers, and underscores."})
+
         try:
             user = User.objects.create_user(username=username, email=email, password=password)
             user.save()
+            Profile.objects.create(user=user, bio=bio, social_media=social_media_links.split(','))
+
         except IntegrityError:
-            return render(request, "signup.html", {
-                "message": "Email address is already registered."
-            })
+            return render(request, "signup.html", {"message": "Username is already taken. Please choose a different one."})
+
+        except ValidationError:
+            return render(request, "signup.html", {"message": "Email address is already registered."})
+
         login(request, user)
         return redirect("index")
 
     return render(request, "signup.html")
 
-
 def login_view(request):
     if request.method == "POST":
-        username = request.POST["username"]
-        password = request.POST["password"]
+        username = request.POST.get("username")
+        password = request.POST.get("password")
+
         user = authenticate(request, username=username, password=password)
+
         if user is not None:
             login(request, user)
             return redirect("index")
         else:
-            return render(request, "login.html", {
-                "message": "Invalid credentials."
-            })
+            return render(request, "login.html", {"message": "Invalid credentials."})
 
     return render(request, "login.html")
-
 
 def logout_view(request):
     logout(request)
     return redirect("login")
 
-
 def index(request):
     return render(request, "base.html")
 
-
-
 @login_required
+@transaction.atomic
 def diary(request):
     if request.method == 'POST':
         form = MovieForm(request.POST)
@@ -89,25 +73,21 @@ def diary(request):
             if form.cleaned_data['is_favorite']:
                 movie.is_favorite = True
 
+            if Movie.objects.filter(user=request.user, movie_name=movie.movie_name).exists():
+                return redirect('diary')
+
             movie.save()
 
             if movie.is_favorite:
                 favorite_movie = FavoriteMovie(user=request.user, movie=movie)
                 favorite_movie.save()
 
-            return redirect('diary')
-    else:
-        form = MovieForm()
+                return redirect('diary')
 
-    movies = Movie.objects.filter(user=request.user, is_watchlist=False)
+    movies = Movie.objects.filter(user=request.user, is_watchlist=False, is_top3=False).order_by('-date').select_related('user')
 
-    context = {
-        'form': form,
-        'movies': movies,
-    }
+    context = {'movies': movies}
     return render(request, 'diary.html', context)
-
-
 
 @login_required
 def watchlist(request):
@@ -125,20 +105,46 @@ def watchlist(request):
 
     watchlist_movies = Movie.objects.filter(user=request.user, is_watchlist=True)
 
-    context = {
-        'form': form,
-        'watchlist_movies': watchlist_movies,
-    }
-
+    context = {'form': form, 'watchlist_movies': watchlist_movies}
     return render(request, 'watchlist.html', context)
 
+@login_required
+def add_to_top3(request):
+    if request.method == 'POST':
+        movie_name = request.POST.get('movie_name')
+        details = request.POST.get('details')
+        poster = request.POST.get('poster')
+
+        profile = Profile.objects.get(user=request.user)
+
+        if profile.top3_movies.count() >= 3:
+            return render(request, 'profile.html', {'error_message': "You can have at most three movies in your top 3."})
+
+        if not profile.top3_movies.filter(movie_name=movie_name).exists():
+            movie = Movie.objects.create(
+                user=request.user,
+                movie_name=movie_name,
+                details=details,
+                poster=poster,
+                is_watchlist=False,
+                is_favorite=False,
+                is_top3=True,
+            )
+            profile.top3_movies.add(movie)
+
+    return redirect('profile')
 
 @login_required
 def delete_movie(request, movie_id):
     movie = Movie.objects.get(id=movie_id)
     movie.delete()
-    return redirect('watchlist')
 
+    referer_url = request.META.get('HTTP_REFERER', None)
+
+    if referer_url and referer_url.startswith(request.build_absolute_uri('/')[:-1]):
+        return redirect(referer_url)
+    else:
+        return redirect('watchlist')
 
 @login_required
 def favorites(request):
@@ -158,41 +164,107 @@ def movie_details(request, movie_id):
             comment.movie = movie
             comment.save()
 
-            # Debugging: Print the username
-            print("Comment user:", request.user.username)
-
-            # Redirect to the same movie details page after posting a comment
             return redirect('movie_details', movie_id=movie_id)
     else:
         comment_form = CommentForm()
 
     return render(request, 'movie_details.html', {'movie': movie, 'comments': comments, 'comment_form': comment_form})
 
-@login_required
 def add_to_favorites(request, movie_id):
     movie = get_object_or_404(Movie, id=movie_id)
 
-    favorite_movie = FavoriteMovie.objects.filter(user=request.user, movie=movie).first()
-    if favorite_movie:
-        return redirect('favorites')
+    favorite_movie, created = FavoriteMovie.objects.get_or_create(user=request.user, movie=movie)
 
-    favorite_movie = FavoriteMovie(user=request.user, movie=movie)
-    favorite_movie.save()
-
-    movie.is_favorite = True
-    movie.save()
-
+    if created:
+        movie.is_favorite = True
+        movie.save()
 
     return redirect('favorites')
 
-@login_required  # This decorator ensures that the user is logged in to access the profile page
+@login_required
 def profile_view(request, username=None):
-    # Your logic for the profile view goes here
-    # You can fetch user-related data or perform any other actions
+    profile = Profile.objects.get(user=request.user)
+    all_time_favorites = profile.all_time_favorites.all()
 
-    return render(request, 'profile.html', {'username': username})
+    recent_activity = Movie.objects.filter(
+        Q(user=request.user, is_watchlist=False) & ~Q(id__in=profile.top3_movies.all())
+    ).order_by('-date')[:5]
 
+    diary_movies = Movie.objects.filter(
+        user=request.user,
+        is_watchlist=False,
+        is_top3=False
+    ).exclude(id__in=profile.top3_movies.all())
 
+    films_count = diary_movies.count()
 
+    top3_movies = profile.top3_movies.all()
+    profile_movies = Movie.objects.filter(user=request.user, is_watchlist=False)
+    bio = profile.bio
+    social_media = profile.social_media
+    following_count = profile.follows.count()
+    followers_count = profile.followed_by.count()
+    profile_picture_url = profile.profile_picture.url if profile.profile_picture else None
 
+    context = {
+        'user': request.user,
+        'all_time_favorites': all_time_favorites,
+        'recent_activity': recent_activity,
+        'top3_movies': top3_movies,
+        'films_count': films_count,
+        'following_count': following_count,
+        'followers_count': followers_count,
+        'bio': bio,
+        'social_media': social_media,
+        'profile_picture_url': profile_picture_url,
+    }
 
+    return render(request, 'profile.html', context)
+
+@login_required
+def delete_account(request):
+    user = request.user
+    user.delete()
+    return redirect('home')
+
+@login_required
+def update_profile(request):
+    if request.method == 'POST':
+        bio = request.POST.get('bio')
+        social_media = request.POST.get('social_media')
+        profile_picture = request.FILES.get('profile_picture')
+        profile = Profile.objects.get(user=request.user)
+
+        if bio is not None:
+            profile.bio = bio
+        if social_media is not None:
+            profile.social_media = social_media.split(',') if social_media else []
+        if profile_picture is not None:
+            profile.profile_picture = profile_picture
+
+        profile.save()
+
+        return JsonResponse({
+            'bio': profile.bio,
+            'social_media': profile.social_media,
+            'profile_picture_url': profile.profile_picture.url,
+        })
+
+@login_required
+def like_review(request, movie_id):
+    movie = get_object_or_404(Movie, id=movie_id)
+    user = request.user
+    favorite_movie = FavoriteMovie.objects.filter(user=user, movie=movie).first()
+
+    if favorite_movie:
+        favorite_movie.delete()
+        movie.review_likes -= 1
+        liked = False
+    else:
+        FavoriteMovie.objects.create(user=user, movie=movie)
+        movie.review_likes += 1
+        liked = True
+
+    movie.save()
+
+    return JsonResponse({'review_likes': movie.review_likes, 'liked': liked})
