@@ -10,7 +10,7 @@
         <div class="user-details">
           <a href="{% url 'profile' %}">@{{ request.user.username }}</a>
           <div id="bio-container">
-            <p id="bio">{{ bio }}</p>
+            <p id="bio">  - {{ bio }}</p>
           </div>
           <div id="social-media-container">
             <ul class="social-media-links">
@@ -49,7 +49,7 @@
       {% if recent_activity %}
         <!-- Loop through recent activity and display movie posters -->
         {% for movie in recent_activity %}
-          <img src="{{ movie.poster }}" alt="{{ movie.movie_name }}" class="movie-poster">
+          <img src="{{ entry.poster }}" alt="{{ movie.movie_name }}" class="movie-poster">
         {% endfor %}
       {% else %}
         <p class="no-activity">No recent activity.</p>

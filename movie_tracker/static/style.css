@@ -295,3 +295,60 @@ main {
   margin-left: 280px; 
 }
 
+/* Styling for the "Like" button */
+button.like-button {
+  background-color: #c82e2c;
+  border: none;
+  color: #ffffff;
+  font-size: 0.8em;
+  font-family: cursive;
+  transition: background 0.3s, color 0.3s;
+  margin-top: 10px;
+  cursor: pointer;
+}
+
+button.like-button:hover {
+  background-color: #8c1f1c;
+}
+
+button.like-button:focus {
+  outline: none;
+}
+
+button.like-button.clicked {
+  background-color: #8c1f1c;
+}
+
+
+.user-info {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.pfp{
+  width: 50px; 
+  height: 50px; 
+  border-radius: 50%; 
+  margin-bottom: 5px;
+}
+
+/* Styles for movie details */
+.movie-details {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.movie-poster-small {
+  width: 80px; /* Adjust the size as needed */
+  height: 120px; /* Adjust the size as needed */
+  margin-bottom: 8px;
+}
+
+.small-text {
+  font-size: 12px; /* Adjust the size as needed */
+  margin: 0;
+}
+
+/* Other existing styles can go here */

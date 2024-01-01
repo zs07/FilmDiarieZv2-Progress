@@ -6,6 +6,13 @@
 <div class="movie-details">
   <h1>{{ movie.movie_name }}</h1>
   <div class="movie-info">
+    <div class="user-info" style="float: left; margin-right: 20px; text-align: center;">
+      <a href="{% url 'profile' %}">
+        <img class="pfp" src="{{ movie.user.profile.profile_picture.url }}" alt="User Profile Picture">
+        <p style="margin: 0;"><strong>{{ movie.user.username }}</strong></p>
+
+      </a>
+    </div>
     <img class="movie-poster" src="{{ movie.poster }}" alt="Movie Poster">
     <div class="movie-rating-review">
       <p><strong>Watch Date:</strong> {{ movie.date }}</p>
@@ -13,7 +20,71 @@
       <p><strong>Review:</strong> {{ movie.review }}</p>
     </div>
   </div>
+
+  <!-- Like button and count -->
+  <button id="likeButton" data-movie-id="{{ movie.id }}" class="like-button">Like</button>
+  <span id="likeCount">{{ movie.review_likes }}</span>
+
   <a class="nav-link" href="{{ movie.details }}">View Details</a>
+
+  <!-- Comments section -->
+  <div class="comments-section" id="comment_form">
+    <h2>Comments</h2>
+    <ul>
+      {% for comment in comments %}
+        <li>
+          <a href="{% url 'profile' username=comment.user.username %}">{{ comment.user.username }}</a> -
+          {{ comment.text }} - {{ comment.created_at }}
+        </li>
+      {% endfor %}
+    </ul>
+    <form method="post" action="{% url 'movie_details' movie.id %}">
+      {% csrf_token %}
+      <textarea id="comment_text" name="text"></textarea>
+      <button type="submit" class="post-comment-button">Post Comment</button>
+    </form>
+  </div>
 </div>
+
+<script>
+  document.getElementById('likeButton').addEventListener('click', function () {
+    var likeButton = document.getElementById('likeButton');
+    likeButton.classList.toggle('clicked');
+
+    var movieId = likeButton.getAttribute('data-movie-id');
+
+    // Use fetch API to send a POST request to the like_review view
+    fetch(`/like_review/${movieId}/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCookie('csrftoken'),  // Include CSRF token
+      },
+    })
+    .then(response => response.json())
+    .then(data => {
+      // Update the like count on the page
+      var likeCountElement = document.getElementById('likeCount');
+      likeCountElement.textContent = data.review_likes;
+    });
+  });
+
+  // Function to get CSRF token from cookies
+  function getCookie(name) {
+    var cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      var cookies = document.cookie.split(';');
+      for (var i = 0; i < cookies.length; i++) {
+        var cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+</script>
+
 
 {% endblock %}

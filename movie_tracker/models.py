@@ -19,21 +19,17 @@ class Profile(models.Model):
     def __str__(self):
         return f"Profile for {self.user.username}"
 
-
-
 class FavoriteMovieManager(models.Manager):
     pass
 
-
 class FavoriteMovie(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    movie = models.ForeignKey('movie_tracker.Movie', on_delete=models.CASCADE)
+    movie = models.ForeignKey('Movie', on_delete=models.CASCADE)
 
     objects = FavoriteMovieManager()
 
     def __str__(self):
         return f"{self.user.username} - {self.movie.movie_name}"
-
 
 class Movie(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
@@ -46,8 +42,24 @@ class Movie(models.Model):
     is_watchlist = models.BooleanField(default=False)
     is_favorite = models.BooleanField(default=False)
     is_top3 = models.BooleanField(default=False)
+    review_likes = models.PositiveIntegerField(default=0)  # New field for tracking likes
+
+    # ManyToManyField to store likes for each review
+    likes = models.ManyToManyField(User, related_name='movie_likes', blank=True)
+
+    # ManyToManyField to store comments for each movie
+    comments = models.ManyToManyField(User, through='Comment', related_name='movie_comments', blank=True)
 
     objects = models.Manager()
 
     def __str__(self):
         return self.movie_name
+
+class Comment(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    movie = models.ForeignKey(Movie, on_delete=models.CASCADE)
+    text = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.text}"
