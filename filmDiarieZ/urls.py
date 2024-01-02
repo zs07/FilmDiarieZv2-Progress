@@ -27,4 +27,4 @@ urlpatterns = [
     path('timeline/', views.timeline, name='timeline'),
     path('follow_user/<str:username>/', follow_user, name='follow_user'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
- #added stuff here for bug fix on comments and likes
+ #added stuff here for bug fix on comments and likes!
