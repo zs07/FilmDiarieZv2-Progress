@@ -1,6 +1,9 @@
+<!-- base.html -->
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    {% csrf_token %}
     {% load static %}
 
     <link href="{% static 'style.css' %}" rel="stylesheet" type="text/css">
@@ -12,10 +15,15 @@
 <body>
     <div class="container px-4">
         <nav class="navbar navbar-expand-lg">
-            <a class="navbar-brand" href="{% url 'index' %}" id="logo" style="font-size: 2em;">🍿FilmDiarieZ</a>
+            <a class="navbar-brand" href="{% if user.is_authenticated %}{% url 'timeline' %}{% else %}{% url 'index' %}{% endif %}" id="logo">
+                <img src="{% static 'logo.png' %}" alt="FilmDiarieZ Logo" style="width: 15em; height: auto;">
+            </a>
             <ul class="navbar-nav ml-auto">
                 <li class="nav-item">
-                    <a class="nav-link" href="{% url 'index' %}">Home</a>
+                    <a class="nav-link" href="{% if user.is_authenticated %}{% url 'timeline' %}{% else %}{% url 'index' %}{% endif %}">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'profile' %}">Profile</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="{% url 'logout' %}">Log Out</a>
@@ -30,12 +38,10 @@
                 <button class="nav{% if request.path == '/diary/' %} active{% endif %}" id="diary">Diary</button>
             </a>
             <a href="{% url 'watchlist' %}">
-                <button class="nav{% if request.path == '/watchlist/' %} active{% endif %}" id="watchlist">Watchlist
-                </button>
+                <button class="nav{% if request.path == '/watchlist/' %} active{% endif %}" id="watchlist">Watchlist</button>
             </a>
             <a href="{% url 'favorites' %}">
-                <button class="nav{% if request.path == '/favorites/' %} active{% endif %}" id="favorites">Favorites
-                </button>
+                <button class="nav{% if request.path == '/favorites/' %} active{% endif %}" id="favorites">Favorites</button>
             </a>
         </div>
         <main>
@@ -47,18 +53,13 @@
                 <li>"Favorites" to revisit old favorites.</li>
                 <p>Enjoy the cinematic journey at your fingertips.</p>
                 <p>Let's dive in and explore the world of movies together!</p>
-
             {% endblock %}
         </main>
     </div>
 
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    <script src="{% static 'script.js' %}"></script>
-
-
+    <script src="{% static 'dropdown.js' %}"></script>
 </body>
-
-
 </html>

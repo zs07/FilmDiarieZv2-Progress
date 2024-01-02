@@ -1,0 +1,171 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <div class="profile-container">
+    <!-- Top Box: User Information and Stats -->
+    <div id="top-box" class="top-box">
+      <div id="user-info" class="user-info">
+        <!-- User Profile Picture and Details -->
+        <img src="{{ profile_picture_url }}" class="profile-picture">
+        <div class="user-details">
+          <a href="{% url 'profile' %}">@{{ request.user.username }}</a>
+          <div id="bio-container">
+            <p id="bio">  - {{ bio }}</p>
+          </div>
+          <div id="social-media-container">
+            <ul class="social-media-links">
+              {% for link in social_media %}
+                <li><a href="{{ link }}">{{ link }}</a></li>
+              {% endfor %}
+            </ul>
+          </div>
+
+          <!-- Edit Profile Form (Initially Hidden) -->
+          <div id="edit-profile-form" style="display: none;">
+            <input type="text" id="edit-bio" placeholder="Edit Bio" value="{{ bio }}">
+            <input type="text" id="edit-social-media" placeholder="Edit Social Media Links" value="{% if social_media %}{{ social_media|join:', ' }}{% endif %}">
+            <input type="file" id="edit-profile-picture" accept="image/*">
+            <button class="save-changes-btn" onclick="saveChanges()">Save Changes</button>
+          </div>
+
+          <!-- Edit Profile Button -->
+          <div>
+            <button class="edit-profile-button" onclick="toggleEditProfile()">Edit Profile</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Profile Stats -->
+      <div id="profile-stats" class="profile-stats">
+        <p>Films: {{ films_count }}</p>
+        <p>Following: {{ following_count }}</p>
+        <p>Followers: {{ followers_count }}</p>
+      </div>
+    </div>
+
+    <!-- Followers Section -->
+    <h3>Followers</h3>
+    <div class="followers-list">
+      {% for follower in request.user.profile.followers.all %}
+        {% if follower.username %}
+          <p><a href="{% url 'view_profile' follower.username %}">@{{ follower.username }}</a></p>
+        {% endif %}
+      {% endfor %}
+
+      <!-- Add this print statement -->
+      {% if request.user.profile.followers.all %}
+        <p></p>
+      {% else %}
+        <p>No followers.</p>
+      {% endif %}
+    </div>
+
+    <!-- Following Section -->
+<h3>Following</h3>
+<div class="following-list">
+  {% if request.user.profile.following.exists %}
+    {% for following_profile in request.user.profile.following.all %}
+      {% if following_profile.user.username %}
+        <p><a href="{% url 'view_profile' username=following_profile.user.username %}">@{{ following_profile.user.username }}</a></p>
+      {% else %}
+        <p>No username found for following user.</p>
+      {% endif %}
+    {% endfor %}
+  {% else %}
+    <p>Not following anyone.</p>
+  {% endif %}
+</div>
+
+
+    <!-- Recent Activity Section -->
+    <div id="recent-activity" class="recent-activity">
+      <h3>Recent Activity</h3>
+      {% if recent_activity %}
+        <!-- Loop through recent activity and display movie posters -->
+        {% for movie in recent_activity %}
+          <img src="{{ movie.poster }}" alt="{{ movie.movie_name }}" class="movie-poster">
+        {% endfor %}
+      {% else %}
+        <p class="no-activity">No recent activity.</p>
+      {% endif %}
+    </div>
+
+    <!-- Your Top 3 Movies Section -->
+    <h3>Your Top 3</h3>
+    <!-- Form for adding movies to the Top 3 -->
+    <form id="add-top3-movie-form" method="POST" action="{% url 'add_to_top3' %}">
+      {% csrf_token %}
+      <input required type="text" id="movie_name" name="movie_name" placeholder="Movie Name">
+      <input required type="text" id="details" name="details" placeholder="Details URL">
+      <input required type="text" id="poster" name="poster" placeholder="Image URL">
+      <button type="submit">Add Movie</button>
+    </form>
+
+    <!-- Display Error Message if Exists -->
+    {% if error_message %}
+      <p class="error-message">{{ error_message }}</p>
+    {% endif %}
+  </div>
+
+  <!-- Your Top 3 Section -->
+  <div id="your-top3" class="your-top3">
+    <div class="top3-container">
+      {% for movie in top3_movies %}
+        <div class="top3-movie-entry">
+          <img class="top3-movie-poster" src="{{ movie.poster }}" alt="Top 3 Movie Poster">
+          <!-- Form for deleting a movie from the Top 3 -->
+          <form method="POST" action="{% url 'delete_movie' movie.id %}">
+            {% csrf_token %}
+            <button type="submit" class="nav-link">Delete</button>
+          </form>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Additional Script for Profile Editing -->
+  <script>
+    // Function to toggle the visibility of the edit profile form
+    function toggleEditProfile() {
+      var formDiv = document.getElementById("edit-profile-form");
+      formDiv.style.display = formDiv.style.display === "none" ? "block" : "none";
+    }
+
+    // Function to save profile changes asynchronously
+    async function saveChanges() {
+      var bio = document.getElementById("edit-bio").value;
+      var socialMedia = document.getElementById("edit-social-media").value;
+      var profilePictureInput = document.getElementById("edit-profile-picture");
+      var profilePicture = profilePictureInput.files[0];
+
+      var formData = new FormData();
+      formData.append('bio', bio);
+      formData.append('social_media', socialMedia);
+      formData.append('profile_picture', profilePicture);
+      formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+      // Send a POST request to update the profile
+      await fetch('/update_profile/', {
+        method: 'POST',
+        body: formData
+      })
+        .then(response => response.json())
+        .then(data => {
+          // Update the displayed profile information
+          if (data.bio !== undefined) {
+            document.getElementById("bio").innerText = data.bio;
+          }
+          if (data.social_media !== undefined) {
+            document.getElementById("social-media-container").innerHTML = `<ul class="social-media-links"><li><a href="${data.social_media}">${data.social_media}</a></li></ul>`;
+          }
+          if (data.profile_picture_url !== undefined) {
+            document.querySelector(".profile-picture").src = data.profile_picture_url;
+          }
+        })
+        .catch(error => console.error('Error:', error));
+
+    }
+
+  </script>
+
+{% endblock %}
