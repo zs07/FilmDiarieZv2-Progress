@@ -333,3 +333,4 @@ def follow_user(request, username):
 
     # Redirect back to the profile page
     return redirect('view_profile', username=username)
+ #added stuff here for bug fix on comments and likes
