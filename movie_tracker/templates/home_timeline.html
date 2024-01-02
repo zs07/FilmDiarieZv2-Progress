@@ -1,0 +1,34 @@
+<!-- home_timeline.html -->
+
+{% extends "base.html" %}
+
+{% block content %}
+<div class="timeline">
+    {% for movie in entries %}
+        <div class="entry-card">
+            {% with movie.user.profile as other_user_profile %}
+                {% if other_user_profile %}
+                    <div class="user-info">
+                        <!-- User Profile Picture and Details -->
+                        <img class="pfp" src="{{ other_user_profile.profile_picture.url }}">
+                        <a href="{% url 'view_profile' username=other_user_profile.user.username %}">@{{ other_user_profile.user.username }}</a>
+                    </div>
+                {% else %}
+                    <!-- Handle the case where other_user_profile is None -->
+                    <p>Unknown User</p>
+                {% endif %}
+            {% endwith %}
+
+            <!-- Display movie details -->
+            <div class="movie-details">
+                <img src="{{ movie.poster }}" alt="{{ movie.movie_name }}" class="movie-poster-small">
+                <p>{{ movie.movie_name }}</p>
+                <p class="small-text">{{ movie.date }}</p>
+            </div>
+
+            <!-- Link to view movie details -->
+            <a href="{% url 'movie_details' movie_id=movie.id %}">View Movie</a>
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}

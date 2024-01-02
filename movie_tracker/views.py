@@ -3,18 +3,15 @@ from django.contrib.auth.models import User
 from django.contrib.auth import login, authenticate, logout
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from .forms import MovieForm, ProfilePictureForm
-from django.db import IntegrityError
-from .models import Movie, FavoriteMovie, Profile
-from django.core.exceptions import ValidationError
+from django.db import IntegrityError, transaction
 from django.http import HttpResponseBadRequest, JsonResponse
 from django.db.models import Q
+from .forms import MovieForm, ProfilePictureForm, CommentForm
+from .models import Movie, FavoriteMovie, Profile, Comment
+from django.core.exceptions import ValidationError
 from django.db import transaction
 
-
-
 def signup_view(request):
-    """Handles user registration."""
     if request.method == "POST":
         username = request.POST["username"]
         email = request.POST["email"]
@@ -22,7 +19,6 @@ def signup_view(request):
         bio = request.POST.get('bio')
         social_media_links = request.POST.get('social_media')
 
-        # Validate username format
         if not re.match("^[a-zA-Z0-9_]+$", username):
             return render(request, "signup.html", {"message": "Invalid username format. Use only letters, numbers, and underscores."})
 
@@ -38,13 +34,11 @@ def signup_view(request):
             return render(request, "signup.html", {"message": "Email address is already registered."})
 
         login(request, user)
-        return redirect("profile")
+        return redirect("index")
 
     return render(request, "signup.html")
 
-
 def login_view(request):
-    """Handles user login."""
     if request.method == "POST":
         username = request.POST.get("username")
         password = request.POST.get("password")
@@ -59,22 +53,16 @@ def login_view(request):
 
     return render(request, "login.html")
 
-
 def logout_view(request):
-    """Handles user logout."""
     logout(request)
     return redirect("login")
 
-
 def index(request):
-    """Renders the index page."""
     return render(request, "base.html")
-
 
 @login_required
 @transaction.atomic
 def diary(request):
-    """Handles user's diary entries."""
     if request.method == 'POST':
         form = MovieForm(request.POST)
         if form.is_valid():
@@ -101,10 +89,8 @@ def diary(request):
     context = {'movies': movies}
     return render(request, 'diary.html', context)
 
-
 @login_required
 def watchlist(request):
-    """Handles user's watchlist."""
     if request.method == 'POST':
         form = MovieForm(request.POST)
         if form.is_valid():
@@ -122,10 +108,8 @@ def watchlist(request):
     context = {'form': form, 'watchlist_movies': watchlist_movies}
     return render(request, 'watchlist.html', context)
 
-
 @login_required
 def add_to_top3(request):
-    """Handles adding movies to the user's top 3 list."""
     if request.method == 'POST':
         movie_name = request.POST.get('movie_name')
         details = request.POST.get('details')
@@ -134,7 +118,6 @@ def add_to_top3(request):
         profile = Profile.objects.get(user=request.user)
 
         if profile.top3_movies.count() >= 3:
-            # Customize error message based on how you want to handle the situation
             return render(request, 'profile.html', {'error_message': "You can have at most three movies in your top 3."})
 
         if not profile.top3_movies.filter(movie_name=movie_name).exists():
@@ -151,10 +134,8 @@ def add_to_top3(request):
 
     return redirect('profile')
 
-
 @login_required
 def delete_movie(request, movie_id):
-    """Handles deleting a movie from user's lists."""
     movie = Movie.objects.get(id=movie_id)
     movie.delete()
 
@@ -165,23 +146,31 @@ def delete_movie(request, movie_id):
     else:
         return redirect('watchlist')
 
-
 @login_required
 def favorites(request):
-    """Renders user's favorite movies."""
     favorite_movies = FavoriteMovie.objects.filter(user=request.user).select_related('movie')
     return render(request, 'favorites.html', {'favorite_movies': favorite_movies})
 
-
 @login_required
 def movie_details(request, movie_id):
-    """Renders details of a specific movie."""
     movie = get_object_or_404(Movie, id=movie_id)
-    return render(request, 'movie_details.html', {'movie': movie})
+    comments = Comment.objects.filter(movie=movie).order_by('-created_at')
 
+    if request.method == 'POST':
+        comment_form = CommentForm(request.POST)
+        if comment_form.is_valid():
+            comment = comment_form.save(commit=False)
+            comment.user = request.user
+            comment.movie = movie
+            comment.save()
+
+            return redirect('movie_details', movie_id=movie_id)
+    else:
+        comment_form = CommentForm()
+
+    return render(request, 'movie_details.html', {'movie': movie, 'comments': comments, 'comment_form': comment_form})
 
 def add_to_favorites(request, movie_id):
-    """Handles adding a movie to user's favorites."""
     movie = get_object_or_404(Movie, id=movie_id)
 
     favorite_movie, created = FavoriteMovie.objects.get_or_create(user=request.user, movie=movie)
@@ -192,10 +181,8 @@ def add_to_favorites(request, movie_id):
 
     return redirect('favorites')
 
-
 @login_required
 def profile_view(request):
-    """Renders user's profile page."""
     profile = Profile.objects.get(user=request.user)
     all_time_favorites = profile.all_time_favorites.all()
 
@@ -234,18 +221,14 @@ def profile_view(request):
 
     return render(request, 'profile.html', context)
 
-
 @login_required
 def delete_account(request):
-    """Handles user account deletion."""
     user = request.user
     user.delete()
     return redirect('home')
 
-
 @login_required
 def update_profile(request):
-    """Handles updating user's profile information."""
     if request.method == 'POST':
         bio = request.POST.get('bio')
         social_media = request.POST.get('social_media')
@@ -266,3 +249,87 @@ def update_profile(request):
             'social_media': profile.social_media,
             'profile_picture_url': profile.profile_picture.url,
         })
+
+@login_required
+def like_review(request, movie_id):
+    movie = get_object_or_404(Movie, id=movie_id)
+    user = request.user
+    favorite_movie = FavoriteMovie.objects.filter(user=user, movie=movie).first()
+
+    if favorite_movie:
+        favorite_movie.delete()
+        movie.review_likes -= 1
+        liked = False
+    else:
+        FavoriteMovie.objects.create(user=user, movie=movie)
+        movie.review_likes += 1
+        liked = True
+
+    movie.save()
+
+    return JsonResponse({'review_likes': movie.review_likes, 'liked': liked})
+
+
+# views.py
+@login_required
+def timeline(request):
+    entries = Movie.objects.filter(is_watchlist=False, is_top3=False).order_by('-date').select_related('user')
+
+    context = {'entries': entries}
+
+    return render(request, 'home_timeline.html', context)
+
+
+@login_required
+def view_profile(request, username):
+    if request.user.username == username:
+        # If the requested username is the same as the logged-in user, redirect to their own profile
+        return redirect('profile')
+
+    other_user_profile = get_object_or_404(Profile.objects.select_related('user').prefetch_related('top3_movies'), user__username=username)
+
+    # Additional data retrieval for the user being viewed
+    other_user_recent_activity = Movie.objects.filter(
+        Q(user=other_user_profile.user, is_watchlist=False) & ~Q(id__in=other_user_profile.top3_movies.all())
+    ).order_by('-date')[:5].values('poster', 'movie_name')  # Select only necessary fields
+
+    other_user_top3_movies = other_user_profile.top3_movies.values('poster', 'movie_name')  # Select only necessary fields
+
+    # Calculate counts
+    films_count = Movie.objects.filter(user=other_user_profile.user, is_watchlist=False, is_top3=False).count()
+    following_count = other_user_profile.follows.count()
+    followers_count = other_user_profile.followed_by.count()
+
+    context = {
+        'other_user_profile': other_user_profile,
+        'other_user_recent_activity': other_user_recent_activity,
+        'other_user_top3_movies': other_user_top3_movies,
+        'films_count': films_count,
+        'following_count': following_count,
+        'followers_count': followers_count,
+    }
+
+    return render(request, 'view_profile.html', context)
+
+@login_required
+def follow_user(request, username):
+    # Get the user to follow or unfollow
+    other_user = get_object_or_404(User, username=username)
+
+    # Get the profiles of the logged-in user and the other user
+    logged_in_user_profile = Profile.objects.get(user=request.user)
+    other_user_profile = Profile.objects.get(user=other_user)
+
+    # Check if the logged-in user is already following the other user
+    if request.user in other_user_profile.followers.all():
+        # If already following, unfollow
+        logged_in_user_profile.follows.remove(other_user)
+    else:
+        # If not following, follow
+        logged_in_user_profile.follows.add(other_user)
+
+    # Save changes to the database
+    logged_in_user_profile.save()
+
+    # Redirect back to the profile page
+    return redirect('view_profile', username=username)
