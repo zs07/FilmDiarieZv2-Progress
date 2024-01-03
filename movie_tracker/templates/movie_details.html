@@ -7,12 +7,15 @@
   <h1>{{ movie.movie_name }}</h1>
   <div class="movie-info">
     <div class="user-info" style="float: left; margin-right: 20px; text-align: center;">
-      <a href="{% url 'profile' %}">
-        <img class="pfp" src="{{ movie.user.profile.profile_picture.url }}" alt="User Profile Picture">
-        <p style="margin: 0;"><strong>{{ movie.user.username }}</strong></p>
+      {% if movie.user.profile %}
+          <a href="{% url 'view_profile' username=movie.user.username %}">@{{ movie.user.username }}</a>
+          <img class="pfp" src="{{ movie.user.profile.profile_picture.url }}" alt="User Profile Picture">
+      {% else %}
+          <p>No username available</p>
+      {% endif %}
+  </div>
 
-      </a>
-    </div>
+
     <img class="movie-poster" src="{{ movie.poster }}" alt="Movie Poster">
     <div class="movie-rating-review">
       <p><strong>Watch Date:</strong> {{ movie.date }}</p>
@@ -33,7 +36,7 @@
     <ul>
       {% for comment in comments %}
         <li>
-          <a href="{% url 'profile' username=comment.user.username %}">{{ comment.user.username }}</a> -
+          <a href="{% url 'view_profile' username=comment.user.username %}">{{ comment.user.username }}</a>
           {{ comment.text }} - {{ comment.created_at }}
         </li>
       {% endfor %}

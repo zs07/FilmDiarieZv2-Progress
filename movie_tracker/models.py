@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 
+
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     profile_picture = models.ImageField(upload_to='profile_pics', blank=True)
@@ -9,15 +10,14 @@ class Profile(models.Model):
     all_time_favorites = models.ManyToManyField('Movie', related_name='all_time_favorites', blank=True)
     recently_viewed_movies = models.ManyToManyField('Movie', related_name='viewed_by_profiles', blank=True)
     top3_movies = models.ManyToManyField('Movie', related_name='top3_movies', blank=True)
-    follows = models.ManyToManyField(
-        "self",
-        related_name="followed_by",
-        symmetrical=False,
-        blank=True
-    )
+    followers = models.ManyToManyField(User, related_name='following_profiles', blank=True)
+    following = models.ManyToManyField('self', related_name='followers_profiles', symmetrical=False, blank=True)
+    objects = models.Manager()
 
     def __str__(self):
         return f"Profile for {self.user.username}"
+
+
 
 class FavoriteMovieManager(models.Manager):
     pass
@@ -57,9 +57,28 @@ class Movie(models.Model):
 
 class Comment(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    movie = models.ForeignKey(Movie, on_delete=models.CASCADE)
+    movie = models.ForeignKey('Movie', on_delete=models.CASCADE)
     text = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
+    objects = models.Manager()
 
     def __str__(self):
         return f"{self.user.username} - {self.text}"
+
+class Notification(models.Model):
+
+    NOTIFICATION_TYPES = (
+        ('F', 'Follow'),
+        ('L', 'Like'),
+        ('C', 'Comment'),
+    )
+
+    notification_type = models.CharField(max_length=1, choices=NOTIFICATION_TYPES)
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sender')
+    receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='receiver')
+    movie = models.ForeignKey('Movie', on_delete=models.CASCADE, blank=True, null=True)
+    comment = models.ForeignKey(Comment, on_delete=models.CASCADE, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    objects = models.Manager()
+    def __str__(self):
+        return f"{self.get_notification_type_display()} from {self.sender.username}"

@@ -4,11 +4,11 @@ from django.contrib.auth import login, authenticate, logout
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError, transaction
-from django.http import HttpResponseBadRequest, JsonResponse
+from django.http import HttpResponseBadRequest, HttpResponseServerError, JsonResponse
 from django.db.models import Q
 from .forms import MovieForm, ProfilePictureForm, CommentForm
-from .models import Movie, FavoriteMovie, Profile, Comment
-from django.core.exceptions import ValidationError
+from .models import Movie, FavoriteMovie, Profile, Comment, Notification
+from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.db import transaction
 
 def signup_view(request):
@@ -164,6 +164,13 @@ def movie_details(request, movie_id):
             comment.movie = movie
             comment.save()
 
+            Notification.objects.create(
+                notification_type='C',
+                sender=request.user,
+                receiver=movie.user,
+                comment=comment,
+            )
+
             return redirect('movie_details', movie_id=movie_id)
     else:
         comment_form = CommentForm()
@@ -182,7 +189,7 @@ def add_to_favorites(request, movie_id):
     return redirect('favorites')
 
 @login_required
-def profile_view(request, username=None):
+def profile_view(request):
     profile = Profile.objects.get(user=request.user)
     all_time_favorites = profile.all_time_favorites.all()
 
@@ -197,13 +204,13 @@ def profile_view(request, username=None):
     ).exclude(id__in=profile.top3_movies.all())
 
     films_count = diary_movies.count()
-
+    notifications = Notification.objects.filter(receiver=request.user).order_by('-created_at')[:10]
     top3_movies = profile.top3_movies.all()
     profile_movies = Movie.objects.filter(user=request.user, is_watchlist=False)
     bio = profile.bio
     social_media = profile.social_media
-    following_count = profile.follows.count()
-    followers_count = profile.followed_by.count()
+    following_count = profile.following.count()
+    followers_count = profile.followers.count()
     profile_picture_url = profile.profile_picture.url if profile.profile_picture else None
 
     context = {
@@ -217,6 +224,7 @@ def profile_view(request, username=None):
         'bio': bio,
         'social_media': social_media,
         'profile_picture_url': profile_picture_url,
+        'notifications': notifications,
     }
 
     return render(request, 'profile.html', context)
@@ -250,34 +258,58 @@ def update_profile(request):
             'profile_picture_url': profile.profile_picture.url,
         })
 
+
 @login_required
 def like_review(request, movie_id):
-    movie = get_object_or_404(Movie, id=movie_id)
-    user = request.user
-    favorite_movie = FavoriteMovie.objects.filter(user=user, movie=movie).first()
+    try:
+        movie = get_object_or_404(Movie, id=movie_id)
+        user = request.user
+        favorite_movie = FavoriteMovie.objects.filter(user=user, movie=movie).first()
 
-    if favorite_movie:
-        favorite_movie.delete()
-        movie.review_likes -= 1
-        liked = False
-    else:
-        FavoriteMovie.objects.create(user=user, movie=movie)
-        movie.review_likes += 1
-        liked = True
+        if favorite_movie:
+            favorite_movie.delete()
+            movie.review_likes -= 1
+            liked = False
+        else:
+            FavoriteMovie.objects.create(user=user, movie=movie)
+            movie.review_likes += 1
+            liked = True
 
-    movie.save()
+        movie.save()
 
-    return JsonResponse({'review_likes': movie.review_likes, 'liked': liked})
+        if movie.review and hasattr(movie.review, 'user'):
+            Notification.objects.create(
+                notification_type='L',
+                sender=request.user,
+                receiver=movie.review.user,
+                movie=movie.review.movie,
+            )
 
-
-# views.py
+        return JsonResponse({'review_likes': movie.review_likes, 'liked': liked})
+    except Exception as e:
+        print(f"Error in like_review view: {e}")
+        return JsonResponse({'error': 'Error occurred while processing the like.'}, status=500)
 @login_required
-def timeline(request):
-    entries = Movie.objects.filter(is_watchlist=False, is_top3=False).order_by('-date').select_related('user')
+def timeline(request, filter_type='all'):
+    user = request.user
+    entries = []
 
-    context = {'entries': entries}
+    if filter_type == 'friends':
+        # Display activity of people the user is following
+        following_users = user.profile.following.values_list('user__id', flat=True)
+        entries = Movie.objects.filter(
+            Q(user__id__in=following_users, is_watchlist=False, is_top3=False)
+        ).order_by('-date').select_related('user')
+    elif filter_type == 'all':
+        # Display all activity
+        entries = Movie.objects.filter(
+            is_watchlist=False, is_top3=False
+        ).order_by('-date').select_related('user')
 
+    context = {'entries': entries, 'filter_type': filter_type}
     return render(request, 'home_timeline.html', context)
+
+
 
 
 @login_required
@@ -297,39 +329,57 @@ def view_profile(request, username):
 
     # Calculate counts
     films_count = Movie.objects.filter(user=other_user_profile.user, is_watchlist=False, is_top3=False).count()
-    following_count = other_user_profile.follows.count()
-    followers_count = other_user_profile.followed_by.count()
+    view_following_count = other_user_profile.following.count()  
+    view_followers_count = other_user_profile.followers.count()
+
+    print("Films Count:", films_count)
+    print("Following Count:", view_following_count)
+    print("Followers Count:", view_followers_count)
 
     context = {
         'other_user_profile': other_user_profile,
         'other_user_recent_activity': other_user_recent_activity,
         'other_user_top3_movies': other_user_top3_movies,
         'films_count': films_count,
-        'following_count': following_count,
-        'followers_count': followers_count,
+        'following_count': view_following_count,
+        'followers_count': view_followers_count,
     }
 
     return render(request, 'view_profile.html', context)
 
+
+
 @login_required
+@transaction.atomic
 def follow_user(request, username):
-    # Get the user to follow or unfollow
-    other_user = get_object_or_404(User, username=username)
+    try:
+        other_user = get_object_or_404(User, username=username)
+        other_user_profile = Profile.objects.get(user=other_user)
+        logged_in_user_profile = Profile.objects.get(user=request.user)
 
-    # Get the profiles of the logged-in user and the other user
-    logged_in_user_profile = Profile.objects.get(user=request.user)
-    other_user_profile = Profile.objects.get(user=other_user)
+        if request.user in other_user_profile.followers.all():
+            # If already following, unfollow
+            logged_in_user_profile.following.remove(other_user_profile)
+            other_user_profile.followers.remove(request.user)
+        else:
+            # If not following, follow
+            logged_in_user_profile.following.add(other_user_profile)
+            other_user_profile.followers.add(request.user)
 
-    # Check if the logged-in user is already following the other user
-    if request.user in other_user_profile.followers.all():
-        # If already following, unfollow
-        logged_in_user_profile.follows.remove(other_user)
-    else:
-        # If not following, follow
-        logged_in_user_profile.follows.add(other_user)
+        # Save changes to the database
+        logged_in_user_profile.save()
+        other_user_profile.save()
+        # Create a follow notification
+        Notification.objects.create(
+            notification_type='F',
+            sender=request.user,
+            receiver=other_user,
+        )
 
-    # Save changes to the database
-    logged_in_user_profile.save()
+        # Redirect back to the profile page
+        return redirect('view_profile', username=username)
+    
+    except Exception as e:
+        print(f"Error in follow_user view: {e}")
+        return HttpResponseServerError("Internal Server Error")
 
-    # Redirect back to the profile page
-    return redirect('view_profile', username=username)

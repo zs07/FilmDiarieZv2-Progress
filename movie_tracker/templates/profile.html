@@ -43,13 +43,47 @@
       </div>
     </div>
 
+    <!-- Followers Section -->
+    <h3>Followers</h3>
+    <div class="followers-list">
+      {% for follower in request.user.profile.followers.all %}
+        {% if follower.username %}
+          <p><a href="{% url 'view_profile' follower.username %}">@{{ follower.username }}</a></p>
+        {% endif %}
+      {% endfor %}
+
+      <!-- Add this print statement -->
+      {% if request.user.profile.followers.all %}
+        <p></p>
+      {% else %}
+        <p>No followers.</p>
+      {% endif %}
+    </div>
+
+    <!-- Following Section -->
+<h3>Following</h3>
+<div class="following-list">
+  {% if request.user.profile.following.exists %}
+    {% for following_profile in request.user.profile.following.all %}
+      {% if following_profile.user.username %}
+        <p><a href="{% url 'view_profile' username=following_profile.user.username %}">@{{ following_profile.user.username }}</a></p>
+      {% else %}
+        <p>No username found for following user.</p>
+      {% endif %}
+    {% endfor %}
+  {% else %}
+    <p>Not following anyone.</p>
+  {% endif %}
+</div>
+
+
     <!-- Recent Activity Section -->
     <div id="recent-activity" class="recent-activity">
       <h3>Recent Activity</h3>
       {% if recent_activity %}
         <!-- Loop through recent activity and display movie posters -->
         {% for movie in recent_activity %}
-          <img src="{{ entry.poster }}" alt="{{ movie.movie_name }}" class="movie-poster">
+          <img src="{{ movie.poster }}" alt="{{ movie.movie_name }}" class="movie-poster">
         {% endfor %}
       {% else %}
         <p class="no-activity">No recent activity.</p>
@@ -87,6 +121,23 @@
         </div>
       {% endfor %}
     </div>
+     <!-- Notifications Section -->
+    <div id="notifications" class="notifications">
+      <h3>Notifications</h3>
+      {% for notification in notifications %}
+        <p>
+          {{ notification.sender.username }}
+          {% if notification.notification_type == 'F' %}
+            started following you.
+          {% elif notification.notification_type == 'L' %}
+            liked your review.
+          {% elif notification.notification_type == 'C' %}
+            commented on your review.
+          {% endif %}
+        </p>
+      {% endfor %}
+    </div>
+
   </div>
 
   <!-- Additional Script for Profile Editing -->

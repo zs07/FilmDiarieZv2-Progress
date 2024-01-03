@@ -13,16 +13,13 @@
             <p id="bio">  - {{ other_user_profile.bio }}</p>
           </div>
           
-          
-        
-
-          <!-- Follow/Unfollow Button -->
-          <form id="follow-form" method="POST" action="{% url 'follow_user' other_user_profile.user.username %}">
-            {% csrf_token %}
-            <button type="submit" id="follow-button" class="follow-button {% if request.user in other_user_profile.followers.all %}following{% endif %}">
-              {% if request.user in other_user_profile.followers.all %}Following{% else %}Follow{% endif %}
-            </button>
-          </form>
+<!-- Follow/Unfollow Button -->
+<form id="follow-form" method="POST" action="{% url 'follow_user' other_user_profile.user.username %}">
+  {% csrf_token %}
+  <button type="submit" class="follow-button {% if request.user.profile in other_user_profile.followers_profiles.all %}following{% endif %}">
+    {% if request.user.profile in other_user_profile.followers_profiles.all %}Unfollow{% else %}Follow{% endif %}
+  </button>
+</form>
         </div>
       </div>
 
@@ -33,61 +30,88 @@
         <p>Followers: {{ followers_count }}</p>
       </div>
     </div>
+    <h3>Followers</h3>
+    <div class="followers-list">
+      {% for follower in other_user_profile.followers.all %}
+        <p><a href="{% url 'view_profile' username=follower.username %}">@{{ follower.username }}</a></p>
+      {% endfor %}
+    </div>
+    <!-- Following Section -->
+    <h3>Following</h3>
+    <div class="following-list">
+      {% for following_user in other_user_profile.following.all %}
+      <p><a href="{% url 'view_profile' username=following_user.user.username %}">@{{ following_user.user.username }}</a></p>
+      {% endfor %}
+    </div>
 
-<!-- Recent Activity Section -->
-<div id="recent-activity" class="recent-activity">
-  <h3>Recent Activity</h3>
-  {% if other_user_recent_activity %}
-    <!-- Loop through recent activity and display movie posters -->
-    {% for movie in other_user_recent_activity %}
-      <img src="{{ movie.poster}}" alt="{{ movie.movie_name }}" class="movie-poster">
-    {% endfor %}
-  {% else %}
-    <p class="no-activity">No recent activity.</p>
-  {% endif %}
-</div>
 
+    <!-- Recent Activity Section -->
+    <div id="recent-activity" class="recent-activity">
+      <h3>Recent Activity</h3>
+      {% if other_user_recent_activity %}
+        <!-- Loop through recent activity and display movie posters -->
+        {% for movie in other_user_recent_activity %}
+          <img src="{{ movie.poster}}" alt="{{ movie.movie_name }}" class="movie-poster">
+        {% endfor %}
+      {% else %}
+        <p class="no-activity">No recent activity.</p>
+      {% endif %}
+    </div>
 
-<!-- Their Top 3 Section -->
-<h3>{{ other_user_profile.user.username }}'s Top 3</h3>
-<div class="top3-container">
-    {% for movie in other_user_profile.top3_movies.all %}
+    <!-- Their Top 3 Section -->
+    <h3>{{ other_user_profile.user.username }}'s Top 3</h3>
+    <div class="top3-container">
+      {% for movie in other_user_profile.top3_movies.all %}
         <div class="top3-movie-entry">
-        <img class="top3-movie-poster" src="{{ movie.poster }}" alt="Top 3 Movie Poster">
-
+          <img class="top3-movie-poster" src="{{ movie.poster }}" alt="Top 3 Movie Poster">
         </div>
-    {% endfor %}
-</div>
-
-
-
+      {% endfor %}
+    </div>
   </div>
 
   <!-- Additional Script for Follow/Unfollow Button -->
   <script>
-    const followForm = document.getElementById('follow-form');
-    const followButton = document.getElementById('follow-button');
-
-    followForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const formData = new FormData(followForm);
-      const response = await fetch(followForm.action, {
-        method: followForm.method,
-        body: formData,
-      });
-      const data = await response.json();
-
-      // Update the button text and class
-      followButton.innerText = data.following ? 'Following' : 'Follow';
-      followButton.classList.toggle('following', data.following);
+    document.addEventListener('DOMContentLoaded', () => {
+      const followForm = document.getElementById('follow-form');
+  
+      if (followForm) {
+        followForm.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const response = await fetch(followForm.action, {
+            method: followForm.method,
+            headers: {
+              'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            },
+          });
+  
+          try {
+            const data = await response.json();
+  
+            if (response.ok) {
+              // Update the button text and class
+              const followButton = document.querySelector('.follow-button');
+              followButton.innerText = data.following ? 'Unfollow' : 'Follow';
+              followButton.classList.toggle('following', data.following);
+            } else {
+              console.error('Error:', data.message);
+            }
+          } catch (error) {
+            console.error('JSON Parsing Error:', error);
+  
+            // Handle non-JSON response (e.g., redirect HTML)
+            // Optionally, you can handle this case differently based on your needs
+            window.location.reload(); // Refresh the page as a fallback
+          }
+        });
+      }
     });
   </script>
+  
+
 
   <style>
-    /* Add your CSS styles for the Follow/Unfollow button here */
     .follow-button {
-      /* Your default button styles */
-      background-color: blue; /* Default color */
+      background-color: rgb(14, 14, 61);
       color: white;
       border: none;
       padding: 8px 16px;
@@ -95,13 +119,11 @@
     }
 
     .follow-button.following {
-      /* Styles when the user is following */
-      background-color: red; /* Following color */
+      background-color: red;
     }
 
     .follow-button:hover {
-      /* Styles on hover */
-      background-color: darkblue; /* Hover color */
+      background-color: rgb(33, 33, 90);
     }
   </style>
 {% endblock %}
