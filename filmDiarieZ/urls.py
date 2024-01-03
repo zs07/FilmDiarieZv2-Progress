@@ -21,7 +21,6 @@ urlpatterns = [
     path('add_to_favorites/<int:movie_id>/', views.add_to_favorites, name='add_to_favorites'),
     path('update_profile/', views.update_profile, name='update_profile'),
     path('add_to_top3/', views.add_to_top3, name='add_to_top3'),
-    path('delete_account/', views.delete_account, name='delete_account'),
     path('timeline/<str:filter_type>/', timeline, name='timeline'),
     path('view_profile/<str:username>/', views.view_profile, name='view_profile'),  # Updated profile path
     path('follow_user/<str:username>/', follow_user, name='follow_user'),

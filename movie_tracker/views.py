@@ -229,11 +229,6 @@ def profile_view(request):
 
     return render(request, 'profile.html', context)
 
-@login_required
-def delete_account(request):
-    user = request.user
-    user.delete()
-    return redirect('home')
 
 @login_required
 def update_profile(request):
@@ -277,6 +272,7 @@ def like_review(request, movie_id):
 
         movie.save()
 
+        # Create a notification for the original reviewer
         if movie.review and hasattr(movie.review, 'user'):
             Notification.objects.create(
                 notification_type='L',
@@ -285,10 +281,20 @@ def like_review(request, movie_id):
                 movie=movie.review.movie,
             )
 
+        # Create a notification for the movie owner
+        if user != movie.user:
+            Notification.objects.create(
+                notification_type='L',
+                sender=request.user,
+                receiver=movie.user,
+                movie=movie,
+            )
+
         return JsonResponse({'review_likes': movie.review_likes, 'liked': liked})
     except Exception as e:
         print(f"Error in like_review view: {e}")
         return JsonResponse({'error': 'Error occurred while processing the like.'}, status=500)
+
 @login_required
 def timeline(request, filter_type='all'):
     user = request.user
