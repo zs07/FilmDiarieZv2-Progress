@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block content %}
+    <div id="acc">
+        <h2>Sign up here!</h2>
+        <hr>
+        {% if message %}
+            <h5>{{ message }}</h5>
+        {% endif %}
+        <form id="signup" method="post">
+            {% csrf_token %}
+            <div>
+                <label for="id_username">Username:</label>
+                <input type="text" name="username" id="id_username" required>
+            </div>
+            <div>
+                <label for="id_email">Email:</label>
+                <input type="email" name="email" id="id_email" required>
+            </div>
+            <div>
+                <label for="id_password">Password:</label>
+                <input type="password" name="password" id="id_password" required>
+            </div>
+            <label for="bio">Bio:</label>
+            <textarea id="bio" name="bio"></textarea>
+
+            <label for="social_media">Social media:</label>
+            <input type="text" id="social_media" name="social_media">
+            <button type="submit" class="nav-link">Sign Up</button>
+        </form>
+    </div>
+{% endblock %}

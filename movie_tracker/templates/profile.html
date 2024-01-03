@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <div class="profile-container">
+    <div id="top-box" class="top-box">
+      <div id="user-info" class="user-info">
+        <img src="{{ profile_picture_url }}" class="profile-picture">
+        <div class="user-details">
+          <a href="{% url 'profile' %}">@{{ request.user.username }}</a>
+          <div id="bio-container">
+            <p id="bio">  - {{ bio }}</p>
+          </div>
+          <div id="social-media-container">
+            <ul class="social-media-links">
+              {% for link in social_media %}
+                <li><a href="{{ link }}">{{ link }}</a></li>
+              {% endfor %}
+            </ul>
+          </div>
+          <div id="edit-profile-form" style="display: none;">
+            <input type="text" id="edit-bio" placeholder="Edit Bio" value="{{ bio }}">
+            <input type="text" id="edit-social-media" placeholder="Edit Social Media Links" value="{% if social_media %}{{ social_media|join:', ' }}{% endif %}">
+            <input type="file" id="edit-profile-picture" accept="image/*">
+            <button class="save-changes-btn" onclick="saveChanges()">Save Changes</button>
+          </div>
+          <div>
+            <button class="edit-profile-button" onclick="toggleEditProfile()">Edit Profile</button>
+          </div>
+        </div>
+      </div>
+      <div id="profile-stats" class="profile-stats">
+        <p>Films: {{ films_count }}</p>
+        <p>Following: {{ following_count }}</p>
+        <p>Followers: {{ followers_count }}</p>
+      </div>
+    </div>
+
+    <h3>Followers</h3>
+    <div class="followers-list">
+      {% for follower in request.user.profile.followers.all %}
+        {% if follower.username %}
+          <p><a href="{% url 'view_profile' follower.username %}">@{{ follower.username }}</a></p>
+        {% endif %}
+      {% endfor %}
+      {% if request.user.profile.followers.all %}
+        <p></p>
+      {% else %}
+        <p>No followers.</p>
+      {% endif %}
+    </div>
+
+    <h3>Following</h3>
+    <div class="following-list">
+      {% if request.user.profile.following.exists %}
+        {% for following_profile in request.user.profile.following.all %}
+          {% if following_profile.user.username %}
+            <p><a href="{% url 'view_profile' username=following_profile.user.username %}">@{{ following_profile.user.username }}</a></p>
+          {% else %}
+            <p>No username found for following user.</p>
+          {% endif %}
+        {% endfor %}
+      {% else %}
+        <p>Not following anyone.</p>
+      {% endif %}
+    </div>
+
+    <div id="recent-activity" class="recent-activity">
+      <h3>Recent Activity</h3>
+      {% if recent_activity %}
+        {% for movie in recent_activity %}
+          <img src="{{ movie.poster }}" alt="{{ movie.movie_name }}" class="movie-poster">
+        {% endfor %}
+      {% else %}
+        <p class="no-activity">No recent activity.</p>
+      {% endif %}
+    </div>
+
+    <h3>Your Top 3</h3>
+    <form id="add-top3-movie-form" method="POST" action="{% url 'add_to_top3' %}">
+      {% csrf_token %}
+      <input required type="text" id="movie_name" name="movie_name" placeholder="Movie Name">
+      <input required type="text" id="details" name="details" placeholder="Details URL">
+      <input required type="text" id="poster" name="poster" placeholder="Image URL">
+      <button class = " nav-link" type="submit">Add Movie</button>
+    </form>
+
+    {% if error_message %}
+      <p class="error-message">{{ error_message }}</p>
+    {% endif %}
+  </div>
+
+  <div id="your-top3" class="your-top3">
+    <div class="top3-container">
+      {% for movie in top3_movies %}
+        <div class="top3-movie-entry">
+          <img class="top3-movie-poster" src="{{ movie.poster }}" alt="Top 3 Movie Poster">
+          <form method="POST" action="{% url 'delete_movie' movie.id %}">
+            {% csrf_token %}
+            <button type="submit" class="nav-link">Delete</button>
+          </form>
+        </div>
+      {% endfor %}
+    </div>
+    <div id="notifications" class="notifications">
+      <h3>Notifications</h3>
+      {% for notification in notifications %}
+        <p>
+          {{ notification.sender.username }}
+          {% if notification.notification_type == 'F' %}
+            started following you.
+          {% elif notification.notification_type == 'L' %}
+            liked your review.
+          {% elif notification.notification_type == 'C' %}
+            commented on your review.
+          {% endif %}
+        </p>
+      {% endfor %}
+    </div>
+  </div>
+{% endblock %}

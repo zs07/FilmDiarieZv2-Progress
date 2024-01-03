@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <div class="profile-container">
+    <!-- Top Box: User Information and Stats -->
+    <div id="top-box" class="top-box">
+      <div id="user-info" class="user-info">
+        <!-- User Profile Picture and Details -->
+        <img src="{{ other_user_profile.profile_picture.url }}" class="profile-picture">
+        <div class="user-details">
+          <a href="{% url 'view_profile' username=other_user_profile.user.username %}">@{{ other_user_profile.user.username }}</a>
+          <div id="bio-container">
+            <p id="bio">  - {{ other_user_profile.bio }}</p>
+          </div>
+
+          <!-- Follow/Unfollow Button -->
+          <form id="follow-form" method="POST" action="{% url 'follow_user' other_user_profile.user.username %}">
+            {% csrf_token %}
+            <button type="submit" class="follow-button {% if request.user.profile in other_user_profile.followers_profiles.all %}following{% endif %}">
+              {% if request.user.profile in other_user_profile.followers_profiles.all %}Unfollow{% else %}Follow{% endif %}
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Profile Stats -->
+      <div id="profile-stats" class="profile-stats">
+        <p>Films: {{ films_count }}</p>
+        <p>Following: {{ following_count }}</p>
+        <p>Followers: {{ followers_count }}</p>
+      </div>
+    </div>
+
+    <h3>Followers</h3>
+    <div class="followers-list">
+      {% for follower in other_user_profile.followers.all %}
+        <p><a href="{% url 'view_profile' username=follower.username %}">@{{ follower.username }}</a></p>
+      {% endfor %}
+    </div>
+
+    <!-- Following Section -->
+    <h3>Following</h3>
+    <div class="following-list">
+      {% for following_user in other_user_profile.following.all %}
+        <p><a href="{% url 'view_profile' username=following_user.user.username %}">@{{ following_user.user.username }}</a></p>
+      {% endfor %}
+    </div>
+
+    <!-- Recent Activity Section -->
+    <div id="recent-activity" class="recent-activity">
+      <h3>Recent Activity</h3>
+      {% if other_user_recent_activity %}
+        <!-- Loop through recent activity and display movie posters -->
+        {% for movie in other_user_recent_activity %}
+          <img src="{{ movie.poster }}" alt="{{ movie.movie_name }}" class="movie-poster">
+        {% endfor %}
+      {% else %}
+        <p class="no-activity">No recent activity.</p>
+      {% endif %}
+    </div>
+
+    <!-- Their Top 3 Section -->
+    <h3>{{ other_user_profile.user.username }}'s Top 3</h3>
+    <div class="top3-container">
+      {% for movie in other_user_profile.top3_movies.all %}
+        <div class="top3-movie-entry">
+          <img class="top3-movie-poster" src="{{ movie.poster }}" alt="Top 3 Movie Poster">
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+{% endblock %}

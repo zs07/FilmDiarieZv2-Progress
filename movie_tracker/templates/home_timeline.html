@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="welcome-message">
+    <p>Welcome back, {{ user.username }}. Here’s what your friends have been watching...</p>
+</div>
+
+<div class="filter-buttons">
+    <a class="nav-link" href="{% url 'timeline' filter_type='all' %}">All Activity</a>
+    <a class="nav-link" href="{% url 'timeline' filter_type='friends' %}">Friends</a>
+</div>
+
+<div class="timeline">
+    <div class="entry-card-container">
+        {% for movie in entries %}
+            <div class="entry-card">
+                {% with movie.user.profile as other_user_profile %}
+                    {% if other_user_profile %}
+                        <div class="user-info">
+                            <img class="pfp" src="{{ other_user_profile.profile_picture.url }}">
+                            <a href="{% url 'view_profile' username=other_user_profile.user.username %}">@{{ other_user_profile.user.username }}</a>
+                        </div>
+                    {% else %}
+                        <p>Unknown User</p>
+                    {% endif %}
+                {% endwith %}
+
+                <div class="movie-details-horizontal">
+                    <img src="{{ movie.poster }}" alt="{{ movie.movie_name }}" class="movie-poster-small">
+                    <div class="details">
+                        <p class="small-text">{{ movie.date }}</p>
+                        <a href="{% url 'movie_details' movie_id=movie.id %}" class="movie-title">{{ movie.movie_name }}</a>
+                    </div>
+                </div>
+
+                <a class= "nav-link" href="{% url 'movie_details' movie_id=movie.id %}">View Details</a>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

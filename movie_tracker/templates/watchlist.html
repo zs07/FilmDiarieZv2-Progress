@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <div id="watchlist">
+        <hr>
+        <div id="interface">
+            <div id="movie-view">
+                <form id="new-movie" method="POST" action="{% url 'watchlist' %}">
+                    {% csrf_token %}
+                    <input required type="text" id="movie_name" name="movie_name" placeholder="Movie Name">
+                    <input required type="text" id="details" name="details" placeholder="Details URL">
+                    <input required type="text" id="poster" name="poster" placeholder="Image URL">
+                    <button type="submit" class="nav-link">Add</button>
+                </form>
+            </div>
+            <div class="movie-grid">
+                {% for movie in watchlist_movies %}
+                    <div class="movie-entry">
+                        <img class="movie-poster" src="{{ movie.poster }}" alt="Movie Poster">
+                        <h3 class="movie-name">{{ movie.movie_name }}</h3>
+                        <form method="POST" action="{% url 'delete_movie' movie.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="nav-link">Delete</button>
+                        </form>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+{% endblock %}

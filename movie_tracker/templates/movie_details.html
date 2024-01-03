@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="movie-details">
+  <h1>{{ movie.movie_name }}</h1>
+  <div class="movie-info">
+    <div class="user-info" style="float: left; margin-right: 20px; text-align: center;">
+      {% if movie.user.profile %}
+          <a href="{% url 'view_profile' username=movie.user.username %}">@{{ movie.user.username }}</a>
+          <img class="pfp" src="{{ movie.user.profile.profile_picture.url }}" alt="User Profile Picture">
+      {% else %}
+          <p>No username available</p>
+      {% endif %}
+    </div>
+
+    <img class="movie-poster" src="{{ movie.poster }}" alt="Movie Poster">
+    <div class="movie-rating-review">
+      <p><strong>Watch Date:</strong> {{ movie.date }}</p>
+      <p><strong>Rating:</strong> {{ movie.rating }}</p>
+      <p><strong>Review:</strong> {{ movie.review }}</p>
+    </div>
+  </div>
+
+  <button id="likeButton" data-movie-id="{{ movie.id }}" class="like-button">Like</button>
+  <span id="likeCount">{{ movie.review_likes }}</span>
+
+  <a class="nav-link" href="{{ movie.details }}">View TMDB Page</a>
+
+  <div class="comments-section" id="comment_form">
+    <h2>Comments</h2>
+    <ul>
+      {% for comment in comments %}
+        <li>
+          <a href="{% url 'view_profile' username=comment.user.username %}">{{ comment.user.username }}</a>
+          {{ comment.text }} - {{ comment.created_at }}
+        </li>
+      {% endfor %}
+    </ul>
+    <form method="post" action="{% url 'movie_details' movie.id %}">
+      {% csrf_token %}
+      <textarea id="comment_text" name="text"></textarea>
+      <button type="submit" class="nav-link">Post Comment</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block content %}
+    <div id="acc">
+        <h2>Sign in here!:</h2>
+        <hr>
+        {% if message %}
+            <h5>{{ message }}</h5>
+        {% endif %}
+        <form id="login" method="post">
+            {% csrf_token %}
+            <div>
+                <label for="id_username">Username:</label>
+                <input type="text" name="username" id="id_username" required>
+            </div>
+            <div>
+                <label for="id_password">Password:</label>
+                <input type="password" name="password" id="id_password" required>
+            </div>
+            <button type="submit" class="nav-link">Login</button>
+        </form>
+        
+        <br>
+        <div class="buttons">
+        Don't have an account? <a href="{% url 'signup' %}" style="color: #c82e2c; text-decoration: underline;" >Sign up</a>
+    </div>
+</div>
+{% endblock %}

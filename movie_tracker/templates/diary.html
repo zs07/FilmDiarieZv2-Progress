@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div id="diary">
+    <hr>
+    <div id="interface">
+        <div id="movie-view">
+            <form id="new-movie" method="POST">
+                {% csrf_token %}
+                <input required type="text" id="movie_name" name="movie_name" placeholder="Movie Name">
+                <input required type="text" id="details" name="details" placeholder="Details URL">
+                <input required type="text" id="poster" name="poster" placeholder="Image URL">
+                <input required type="date" id="date" name="date" placeholder="Watch Date">
+                <input required type="number" id="rating" name="rating" placeholder="Rating" step="0.5" min="0" max="10">
+                <input required type="text" id="review" name="review" placeholder="Review">
+                <label for="favorite-checkbox" class="favorite-button">
+                    <input type="checkbox" id="favorite-checkbox" name="is_favorite">
+                    &#10084; Favorite
+                </label>
+                <button type="submit" class="nav-link">Add</button>
+            </form>
+        </div>
+        <div class="movie-grid">
+            {% for movie in movies %}
+            <div class="movie-entry">
+                <img class="movie-poster" src="{{ movie.poster }}" alt="Movie Poster">
+                <h3 class="movie-name">{{ movie.movie_name }}</h3>
+                <a class="nav-link" href="{% url 'movie_details' movie.id %}">View Details</a>
+
+                <form method="POST" action="{% url 'delete_movie' movie.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="nav-link">Delete Movie</button>
+                </form>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,387 @@
+body {
+    background-color: #2E3349;
+    margin: 0;
+}
+
+.navbar {
+    display: flex;
+    justify-content: flex-end;
+    padding: 10px;
+}
+
+a:link,
+a:visited {
+    color: #ffffff;
+    text-decoration: none;
+    font-size: 0.8em;
+    font-family: cursive;
+    padding: 10px;
+}
+
+.navbar-nav {
+    list-style-type: none;
+    display: flex;
+    align-items: center;
+}
+
+.nav-link {
+    background-color: #c82e2c;
+    border-radius: 50px;
+    color: #ffffff;
+    padding: 2px 6px;
+    font-size: 0.8em;
+    font-family: cursive;
+    margin-left: 10px;
+}
+
+.navbar-brand {
+    margin-right: auto;
+}
+
+main {
+    font-family: cursive;
+    color: #ffffff;
+    padding: 20px;
+    font-size: 1.4em;
+}
+
+.buttons {
+    text-align: left;
+    margin-top: 25px;
+}
+
+.nav {
+    background-color: #c82e2c;
+    border-radius: 50px;
+    color: #ffffff;
+    padding: 6px;
+    font-size: 1.5em;
+    font-family: cursive;
+    margin-left: 12px;
+}
+
+.movie-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    grid-gap: 15px;
+    margin-top: 30px;
+}
+
+.movie-entry {
+    text-align: center;
+    flex: 0 0 25%;
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.movie-poster {
+    width: 80%;
+    height: auto;
+    max-height: 500px;
+    object-fit: center;
+    margin-bottom: 10px;
+    max-width: 200px;
+}
+
+.movie-name {
+    margin-top: 10px;
+    margin-bottom: 5px;
+}
+
+.view-movie {
+    display: inline-block;
+    margin-top: 5px;
+}
+
+.favorite-button {
+    background-color: transparent;
+    border: none;
+    color: #c82e2c;
+    font-size: 0.8em;
+    font-family: cursive;
+    margin-left: 12px;
+    transition: color 0.3s;
+}
+
+.favorite-button:hover {
+    color: red;
+}
+
+.favorite-button:focus {
+    outline: none;
+}
+
+.favorite-button:checked {
+    color: red;
+}
+
+.nav.active {
+    background-color: #8c1f1c;
+    color: #ffffff;
+}
+
+.movie-details {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.movie-info {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.movie-rating-review {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.nav-link {
+    margin-top: 10px;
+}
+
+.poster-image {
+    width: 80%;
+    height: auto;
+    max-height: 500px;
+    object-fit: center;
+    margin-bottom: 10px;
+    max-width: 200px;
+}
+
+.profile-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    border: #fff;
+}
+
+.top-box {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+}
+
+.profile-picture {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    margin-right: 20px;
+}
+
+.user-details {
+    flex-grow: 1;
+}
+
+.social-media-links {
+    list-style: none;
+    padding: 0;
+    margin: 10px 0 0 0;
+    display: flex;
+}
+
+.social-media-links li {
+    margin-right: 10px;
+}
+
+.edit-profile-picture {
+    text-align: center;
+    margin-top: 20px;
+}
+
+.profile-picture-input {
+    margin-bottom: 10px;
+}
+
+.profile-stats {
+    text-align: right;
+}
+
+.all-time-favorites,
+.recent-activity {
+    margin-top: 20px;
+}
+
+.all-time-favorites img,
+.recent-activity img {
+    max-width: 100px;
+    margin-right: 10px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+}
+
+.no-activity {
+    font-style: italic;
+}
+
+.add-to-top3-container {
+    text-align: center;
+    margin-top: 20px;
+}
+
+.edit-profile-picture {
+    text-align: center;
+    margin-top: 20px;
+}
+
+.profile-picture-input {
+    margin-bottom: 10px;
+    display: none;
+}
+
+.upload-button {
+    background-color: #3498db;
+    color: #fff;
+    padding: 8px 16px;
+    border: none;
+    cursor: pointer;
+    display: inline-block;
+}
+
+.edit-profile-button,
+.save-changes-btn {
+    background-color: #c82e2c;
+    color: #ffffff;
+    padding: 8px 16px;
+    border: none;
+    cursor: pointer;
+}
+
+.edit-profile-button:hover,
+.save-changes-btn:hover {
+    background-color: #8c1f1c;
+}
+
+.movie-name-dropdown {
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+.top3-container {
+    display: flex;
+    margin-top: 20px;
+}
+
+.top3-movie-grid {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+}
+
+.top3-movie-poster {
+    max-width: 200px;
+    max-height: 220px;
+    margin-right: 10px;
+}
+
+.your-top3 {
+    margin-left: 280px;
+}
+
+/* Styling for the "Like" button */
+button.like-button {
+    background-color: #c82e2c;
+    border: none;
+    color: #ffffff;
+    font-size: 0.8em;
+    font-family: cursive;
+    transition: background 0.3s, color 0.3s;
+    margin-top: 10px;
+    cursor: pointer;
+}
+
+button.like-button:hover {
+    background-color: #8c1f1c;
+}
+
+button.like-button:focus {
+    outline: none;
+}
+
+button.like-button.clicked {
+    background-color: #8c1f1c;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.pfp {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    margin-bottom: 5px;
+}
+
+/* Styles for movie details */
+.movie-details {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.movie-poster-small {
+    width: 160px; 
+    height: 240px; 
+    margin-bottom: 8px;
+}
+
+.small-text {
+    font-size: 12px; 
+}
+
+.timeline {
+    display: flex;
+    flex-direction: column; 
+    overflow-x: auto; 
+    margin-top: 25px;
+}
+
+.entry-card-container {
+    display: flex;
+}
+
+.entry-card {
+    margin-bottom: 10px; 
+}
+
+.movie-details-horizontal {
+    display: flex;
+    align-items: center;
+}
+
+.movie-details-horizontal img {
+    margin-right: 25px; 
+}
+
+
+
+.follow-button {
+    background-color: rgb(14, 14, 61);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    cursor: pointer;
+  }
+
+  .follow-button.following {
+    background-color: red;
+  }
+
+  .follow-button:hover {
+    background-color: rgb(33, 33, 90);
+  }
+
+  
